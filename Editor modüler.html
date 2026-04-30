@@ -1,0 +1,603 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeLee — VFS Editor</title>
+
+
+<!-- ============ YEREL CODEMIRROR CSS ============ -->
+<link rel="stylesheet" href="lib/codemirror/codemirror.css">
+		<!-- Theme -->
+<link rel="stylesheet" href="lib/codemirror/theme/dracula.css">
+
+<link rel="stylesheet" href="lib/codemirror/addon/fold/foldgutter.css">
+<link rel="stylesheet" href="lib/codemirror/addon/hint/show-hint.css">
+
+<!-- ============ YEREL STİL ============ -->
+<link rel="stylesheet" href="style/style.css">
+
+<style>
+</style>
+</head>
+<body>
+<a href="#editors-container" class="skip-link">İçeriğe atla</a>
+
+<!-- Loading -->
+<div id="loading" data-testid="loading-screen" role="status" aria-live="assertive" aria-label="DeLee yükleniyor">
+  <div class="loading-logo"><img src="Editor.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;"></div>
+  <div class="loading-text">DeLee yükleniyor…</div>
+</div>
+
+<div id="app" aria-busy="true">
+
+  <!-- HEADER -->
+  <header id="header" role="banner">
+    <div class="logo-wrap" id="logo-wrap" aria-haspopup="true" aria-expanded="false" aria-controls="logo-dropdown">
+      <div class="logo-icon"><img src="Editor.png" alt="Logo" style="width:100%;height:100%;object-fit:contain;"></div>
+      <span class="logo-text">DeLee</span>
+      <span class="logo-badge">VFS</span>
+      <span class="caret">▾</span>
+      <div class="logo-dropdown" id="logo-dropdown" role="menu" aria-label="Logo menüsü">
+        <div class="upload-item" role="menuitem" data-action="egitim"><span class="icon">🎓</span><span>Eğitim</span></div>
+        <div class="upload-item" role="menuitem" data-action="kaydet"><span class="icon">💾</span><span>Kaydet</span></div>
+        <div class="upload-item" role="menuitem" data-action="indir"><span class="icon">⬇</span><span>İndir</span></div>
+        <div class="upload-item" role="menuitem" data-action="ayarlar"><span class="icon">⚙</span><span>Ayarlar</span></div>
+                <div class="upload-item" role="menuitem" data-action="sonkullananlar"><span class="icon">👥</span><span>Son Kullananlar</span></div>
+        <div class="ctx-sep"></div>
+        <div class="upload-item" role="menuitem" data-action="cikis" style="color:var(--error)"><span class="icon">🚪➜]</span><span>Çıkış</span></div>
+      </div>
+    </div>
+
+    <div class="header-sep"></div>
+
+    <input type="text" class="project-name-input" id="project-name" aria-label="Proje adı" placeholder="Proje adı" data-testid="project-name-input">
+
+    <div class="header-sep"></div>
+
+    <button class="header-btn" id="btn-new-file" title="Yeni Dosya" data-testid="btn-new-file" aria-label="Yeni dosya oluştur" style="display:none;">
+      <span class="icon">📄</span><span class="btn-label">Yeni</span>
+    </button>
+    <button class="header-btn" id="btn-new-folder" title="Yeni Klasör" data-testid="btn-new-folder" aria-label="Yeni klasör oluştur" style="display:none;">
+      <span class="icon">📁</span><span class="btn-label">Klasör</span>
+    </button>
+    <div class="upload-wrap">
+      <button class="header-btn" id="btn-upload" title="Dosya / Klasör / ZIP yükle" data-testid="btn-upload" aria-label="Dosya yükle" aria-haspopup="true" aria-expanded="false" aria-controls="upload-menu">
+        <span class="icon">⬆</span><span class="btn-label">Yükle</span>
+        <span class="caret">▾</span>
+      </button>
+      <div class="upload-menu" id="upload-menu" role="menu" aria-label="Yükleme seçenekleri" data-testid="upload-menu">
+        <div class="upload-item" role="menuitem" data-action="create-file"><span class="icon">📝</span><span>Dosya Oluştur</span></div>
+        <div class="upload-item" role="menuitem" data-action="create-project"><span class="icon">🏗</span><span>Proje Oluştur</span></div>
+        <div class="ctx-sep"></div>
+        <div class="upload-item" role="menuitem" data-action="files" data-testid="upload-item-files"><span class="icon">📄</span><span>Dosya Yükle</span></div>
+        <div class="upload-item" role="menuitem" data-action="folder" data-testid="upload-item-folder"><span class="icon">📂</span><span>Klasör Yükle</span></div>
+        <div class="upload-item" role="menuitem" data-action="zip" data-testid="upload-item-zip"><span class="icon">🗜</span><span>ZIP Yükle</span></div>
+      </div>
+    </div>
+
+    <div class="header-sep"></div>
+    <button class="header-btn" id="btn-format" title="Kodu Formatla (Prettier)" data-testid="btn-format">
+      <span class="icon">✨</span><span class="btn-label">Format</span>
+    </button>
+    <button class="header-btn" id="btn-search" title="Ara ve Değiştir (Ctrl+F)" data-testid="btn-search">
+      <span class="icon">🔍</span><span class="btn-label">Ara</span>
+    </button>
+    <button class="header-btn" id="btn-download-zip" title="Projeyi ZIP olarak indir" data-testid="btn-download-zip" style="display:none;">
+      <span class="icon">⬇</span><span class="btn-label">İndir</span>
+    </button>
+
+    <div class="header-spacer"></div>
+
+    <button class="header-btn" id="btn-open-tab" title="Yeni sekmede aç" data-testid="btn-open-tab">
+      <span class="icon" style="font-size:17px;">⧉</span><!-- 🡽↗ -->
+    </button>
+
+    <button class="header-btn primary" id="btn-run" title="Çalıştır (Ctrl+Enter)" data-testid="btn-run">
+      <span class="icon">▶</span><span class="btn-label">Çalıştır</span>
+    </button>
+  </header>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- FILE EXPLORER -->
+    <aside id="explorer">
+      <div class="panel-strip" id="strip-explorer" role="button" tabindex="0" title="Dosyaları Göster" aria-expanded="true">DOSYALAR ▼</div>
+      <div id="explorer-header">
+        <span class="explorer-title">DOSYALAR</span>
+        <span id="explorer-spacer"></span>
+        <button class="icon-btn" id="exp-new-file" title="Yeni dosya" data-testid="exp-new-file">📄</button>
+        <button class="icon-btn" id="exp-new-folder" title="Yeni klasör" data-testid="exp-new-folder">📁</button>
+        <button class="icon-btn" id="exp-collapse" title="Tümünü kapat" data-testid="exp-collapse">⊟</button>
+        <button class="icon-btn" id="close-explorer" title="Dosyaları Gizle">✕</button>
+      </div>
+      <div id="file-tree" role="tree" aria-label="Dosya ağacı" data-testid="file-tree" aria-roledescription="dosya ağacı"></div>
+    </aside>
+
+    <div id="explorer-divider" role="separator" aria-orientation="vertical" aria-valuenow="240" aria-valuemin="160" aria-valuemax="480" tabindex="0"></div>
+
+    <!-- EDITOR AREA -->
+    <div id="editor-area">
+      <div class="panel-strip" id="strip-editor" role="button" tabindex="0" title="Editörü Göster" aria-expanded="true">EDITOR ▼</div>
+      <div id="tabs-bar" role="tablist" aria-label="Açık sekmeler" data-testid="tabs-bar">
+        <button class="icon-btn" id="close-editor" title="Editörü Gizle" style="flex-shrink:0;height:100%;border-radius:0">✕</button>
+      </div>
+      <div id="editors-container" role="tabpanel" aria-label="Düzenleyici" data-testid="editors-container">
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon">📂</div>
+          <div class="empty-title">Hoşgeldin!</div>
+          <div class="empty-hint">Sol panelden bir dosya aç, yeni dosya oluştur veya klasör/ZIP yükle.</div>
+          <div class="empty-actions">
+            <button class="empty-btn" id="empty-new-file" data-testid="empty-new-file">📄 Yeni Dosya</button>
+            <button class="empty-btn" id="empty-upload-folder" data-testid="empty-upload-folder">📂 Klasör Yükle</button>
+            <button class="empty-btn" id="empty-sample" data-testid="empty-sample">✨ Örnek Proje</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH PANEL (floating, draggable, inside #editor-area) -->
+      <div id="search-panel" role="search" aria-label="Ara ve değiştir" data-testid="search-panel">
+        <!-- Drag handle -->
+        <div class="search-drag-handle" id="search-drag-handle" title="Sürükle">
+          <span class="drag-dots">⋮⋮</span>
+          <span class="drag-label">Ara &amp; Değiştir</span>
+        </div>
+        <!-- Search Row -->
+        <div class="search-row">
+          <input type="text" class="search-input" id="search-input" placeholder="Ara…" autocomplete="off" spellcheck="false" aria-label="Arama terimi" data-testid="search-input">
+          <div class="search-options">
+            <button class="search-toggle" id="search-case" title="Büyük/küçük harf duyarlı" aria-pressed="false" data-testid="search-case">Aa</button>
+            <button class="search-toggle" id="search-word" title="Tam kelime" aria-pressed="false" data-testid="search-word">ab</button>
+            <button class="search-toggle" id="search-regex" title="Regex" aria-pressed="false" data-testid="search-regex">.*</button>
+          </div>
+          <span class="search-count" id="search-count" data-testid="search-count">—</span>
+          <button class="search-btn" id="search-prev" title="Önceki (Shift+Enter)" disabled data-testid="search-prev">↑</button>
+          <button class="search-btn" id="search-next" title="Sonraki (Enter)" disabled data-testid="search-next">↓</button>
+          <button class="search-btn-close" id="search-close" title="Kapat (Esc)" data-testid="search-close">✕</button>
+        </div>
+        <!-- Replace Row -->
+        <div class="search-row" id="replace-row">
+          <input type="text" class="search-input" id="replace-input" placeholder="Değiştir…" autocomplete="off" spellcheck="false" aria-label="Değiştirme terimi" data-testid="replace-input">
+          <button class="search-replace-btn" id="replace-one" title="Bunu Değiştir" disabled data-testid="replace-one">Değiştir</button>
+          <button class="search-replace-btn danger" id="replace-all" title="Tümünü Değiştir" disabled data-testid="replace-all">Tümünü</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="preview-divider" role="separator" aria-orientation="vertical" tabindex="0"></div>
+
+    <!-- PREVIEW -->
+    <div id="preview-panel">
+      <div class="panel-strip" id="strip-preview" role="button" tabindex="0" title="Önizlemeyi Göster" aria-expanded="true">ÖNİZLEME ▼</div>
+      <div id="preview-header">
+        <span class="preview-dot"></span>
+        <span class="preview-title">Önizleme</span>
+        <span class="preview-entry-wrap">
+          <label>Giriş:</label>
+          <select id="entry-select" aria-label="Giriş dosyası seçimi" data-testid="entry-select"></select>
+        </span>
+        <span id="preview-spacer"></span>
+        <button class="icon-btn" id="btn-refresh" title="Yenile" data-testid="btn-refresh">⟳</button>
+        <button class="icon-btn" id="close-preview" title="Önizlemeyi Gizle">✕</button>
+      </div>
+      <iframe id="preview-iframe" title="Önizleme" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups" data-testid="preview-iframe"></iframe>
+
+      <div id="console-resizer" role="separator" aria-orientation="horizontal" aria-valuenow="180" aria-valuemin="36" aria-valuemax="540" tabindex="0"></div>
+      <div id="console-panel">
+        <div class="panel-strip" id="strip-console" role="button" tabindex="0" title="Konsolu Göster" aria-expanded="true">KONSOL ▲</div>
+        <div id="console-header">
+          <span class="console-title">KONSOL</span>
+          <div id="console-filters">
+            <button class="console-filter active" data-level="all" title="Tümü" aria-pressed="true">Tümü</button>
+            <button class="console-filter active" data-level="log" title="Log" aria-pressed="true">◦</button>
+            <button class="console-filter active" data-level="info" title="Info" aria-pressed="true">🛈</button>
+            <button class="console-filter active" data-level="warn" title="Warn" aria-pressed="true">⚠</button>
+            <button class="console-filter active" data-level="error" title="Error" aria-pressed="true">❌</button>
+            <button class="console-filter active" data-level="debug" title="Debug" aria-pressed="true">🛠</button>
+            <button class="console-filter active" data-level="trace" title="Trace" aria-pressed="true">🔍</button>
+            <button class="console-filter active" data-level="success" title="Success" aria-pressed="true">✅</button>
+            <button class="console-filter active" data-level="fatal" title="Fatal" aria-pressed="true">💀</button>
+            <button class="console-filter active" data-level="network" title="Network" aria-pressed="true">🌐</button>
+            <button class="console-filter active" data-level="performance" title="Performance" aria-pressed="true">⚡</button>
+            <button class="console-filter active" data-level="security" title="Security" aria-pressed="true">🔒</button>
+          </div>
+          <span class="console-count" id="console-count">0</span>
+          <span id="console-spacer"></span>
+          <button class="icon-btn" id="console-clear" title="Temizle" data-testid="console-clear">🗑</button>
+          <button class="icon-btn" id="close-console" title="Konsolu Gizle">✕</button>
+        </div>
+        <div id="console-output" role="log" aria-live="polite" aria-label="Konsol çıktıları" data-testid="console-output">
+          <div class="console-empty">◦ Konsol çıktıları burada görünecek</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Tab Bar (380px altında görünür) -->
+  <nav id="mobile-tabs" role="tablist" aria-label="Mobil panel sekmeleri" aria-roledescription="panel sekmeleri">
+    <button class="mobile-tab" data-panel="explorer" role="tab" aria-selected="true"><span class="tab-icon">📁</span>Dosyalar</button>
+    <div class="tab-sep" aria-hidden="true"></div>
+    <button class="mobile-tab active" data-panel="editor-area" role="tab" aria-selected="false"><span class="tab-icon">✏️</span>Editör</button>
+    <div class="tab-sep"></div>
+    <button class="mobile-tab" data-panel="preview-panel" role="tab" aria-selected="false"><span class="tab-icon">👁</span>Önizleme</button>
+    <div class="tab-sep"></div>
+    <button class="mobile-tab" data-panel="console" role="tab" aria-selected="false"><span class="tab-icon">🖥</span>Konsol</button>
+  </nav>
+
+  <!-- STATUS BAR -->
+  <div id="status-bar" role="status" aria-live="off">
+    <div class="status-item" id="status-file">—</div>
+    <div class="status-item" id="status-cursor">Ln 1, Col 1</div>
+    <div class="status-item" id="status-saved" style="color:var(--success)">✓</div>
+    <div id="status-spacer"></div>
+    <div class="status-item" id="status-files">0 dosya</div>
+    <div class="status-item" id="status-persist">💾 IndexedDB</div>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div id="ctx-menu" class="ctx-menu" role="menu" aria-label="Dosya işlemleri" data-testid="ctx-menu">
+  <div class="ctx-item" role="menuitem" data-action="rename">✏️ Yeniden adlandır</div>
+  <div class="ctx-item" role="menuitem" data-action="duplicate">⎘ Kopyala</div>
+<div class="ctx-item" role="menuitem" data-action="move">📦 Taşı</div>
+  <div class="ctx-item" role="menuitem" data-action="newfile">📄 Yeni Dosya</div>
+  <div class="ctx-item" role="menuitem" data-action="newfolder">📁 Yeni Klasör</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" role="menuitem" data-action="delete">🗑 Sil</div>
+</div>
+
+<!-- Mobile context bar (768px altında sadece emoji) -->
+<div id="mobile-ctx-bar">
+  <button data-action="rename">✏️</button>      <!-- 1 -->
+  <button data-action="duplicate">⎘</button>    <!-- 2 -->
+  <button data-action="move">📦</button>        <!-- 3 -->
+  <button data-action="delete">🗑</button>      <!-- 4 -->
+</div>
+
+<!-- Prompt modal -->
+<div class="modal-overlay" id="prompt-modal" aria-modal="true" role="dialog" aria-labelledby="prompt-title">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="prompt-title">Giriş</div>
+      <button class="modal-close" id="prompt-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="prompt-msg" style="margin-bottom:10px;color:var(--text-secondary)"></p>
+      <input type="text" id="prompt-input" class="prompt-input" data-testid="prompt-input">
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" id="prompt-cancel" data-testid="prompt-cancel">İptal</button>
+      <button class="modal-btn primary" id="prompt-ok" data-testid="prompt-ok">Tamam</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="confirm-modal" aria-modal="true" role="dialog" aria-labelledby="confirm-title">
+  <div class="modal alert-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="confirm-title">Onay</div>
+      <button class="modal-close" id="confirm-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="color:var(--text-primary);line-height:1.6"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" id="confirm-cancel" data-testid="confirm-cancel">İptal</button>
+      <!-- Yeni Eklenen Orta Buton (Tanımlama Verileri vb. için) -->
+      <button class="modal-btn danger" id="confirm-secondary" style="display:none;" data-testid="confirm-secondary">İkinci Seçenek</button>
+      <button class="modal-btn primary" id="confirm-ok" data-testid="confirm-ok">Tamam</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settings-modal" aria-modal="true" role="dialog" aria-labelledby="settings-modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="settings-modal-title">⚙ Ayarlar</div>
+      <button class="modal-close" data-close-settings>✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- EDITÖR -->
+      <div class="settings-section">
+        <div class="settings-section-title">Editör</div>
+
+        <div class="settings-row">
+  <label for="set-theme">Tema</label>
+          <select id="set-theme" aria-label="Editör teması">
+            <option value="ayu-dark">Ayu Dark</option>
+            <option value="ayu-mirage">Ayu Mirage</option>
+            <option value="darcula">Darcula</option>
+            <option value="dracula" selected>Dracula</option>
+            <option value="material-darker">Material Darker</option>
+            <option value="monokai">Monokai</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+  <label for="set-font">Font</label>
+          <select id="set-font" aria-label="Font ailesi">
+            <option value="'JetBrains Mono', monospace" selected>JetBrains Mono</option>
+            <option value="'Fira Code', monospace">Fira Code</option>
+            <option value="'Source Code Pro', monospace">Source Code Pro</option>
+            <option value="'Cascadia Code', monospace">Cascadia Code</option>
+            <option value="Consolas, monospace">Consolas</option>
+            <option value="monospace">Sistem Mono</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+  <label for="set-fontsize">Font Boyutu</label>
+          <input type="number" id="set-fontsize" min="10" max="32" step="1" value="13" aria-label="Font boyutu">
+        </div>
+
+        <div class="settings-row">
+  <label for="set-indent">Girinti</label>
+          <input type="number" id="set-indent" min="1" max="8" step="1" value="2" aria-label="Girinti genişliği">
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Satır Numaraları<span class="hint">Sol kenarda satır numaralarını göster</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-linenums" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Kelime Kaydırma<span class="hint">Uzun satırları alt satıra kaydır</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-linewrap" role="switch" aria-checked="false"><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Otomatik Tamamlama<span class="hint">Yazarken öneri listesi göster</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-autocomplete" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Otomatik Parantez Kapatma<span class="hint">(, [, { otomatik kapatılsın</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-closebrackets" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Otomatik Tag Kapatma<span class="hint">HTML/XML tag'lerini otomatik kapat</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-closetags" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Eşleşen Parantezleri Vurgula<span class="hint">İmleç parantez yanındaysa eşini vurgula</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-matchbrackets" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Aktif Satırı Vurgula<span class="hint">İmlecin bulunduğu satırı arka planla vurgula</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-activeline" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Kod Katlama (Fold)<span class="hint">Kod bloklarını katla/yay</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-foldgutter" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Seçim Eşleşmelerini Vurgula<span class="hint">Aynı kelime tüm editörde vurgulansın</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-matchselection" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Sonrasına Kaydır<span class="hint">Dosya sonundan aşağı kaydırmaya izin ver</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-scrollpastend" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+      </div>
+
+      <!-- ÖNİZLEME -->
+      <div class="settings-section">
+        <div class="settings-section-title">Önizleme</div>
+
+        <div class="toggle-wrap">
+          <label>Otomatik Çalıştır<span class="hint">Kaydedildiğinde önizlemeyi otomatik güncelle</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-autorun" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Kod Değiştiğinde Otomatik Önizleme<span class="hint">Her tuş vuruşunda önizlemeyi güncelle</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-livepreview" role="switch" aria-checked="false"><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="settings-row">
+          <label>Otomatik Çalıştır Gecikmesi ms</label>
+          <input type="number" id="set-autorun-delay" min="100" max="5000" step="100" value="600" aria-label="Otomatik çalıştırma gecikmesi (ms)">
+        </div>
+      </div>
+
+            <!-- KAYIT -->
+      <div class="settings-section">
+        <div class="settings-section-title">Kayıt</div>
+
+        <div class="toggle-wrap">
+          <label>Otomatik Kayıt<span class="hint">Değişiklikleri otomatik olarak IndexedDB'ye kaydet</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-autosave-enabled" role="switch" aria-checked="true" checked><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div class="settings-row" id="autosave-interval-row">
+          <label for="set-autosave">Kayıt Aralığı (sn)</label>
+          <input type="number" id="set-autosave" min="1" max="120" step="1" value="3" aria-label="Otomatik kayıt aralığı (saniye)">
+        </div>
+      </div>
+
+      <!-- KAYIT YOLU -->
+      <div class="settings-section">
+        <div class="settings-section-title">Kayıt Yolu</div>
+
+        <div class="settings-row" style="flex-wrap:wrap;gap:8px;">
+          <label for="set-save-path" style="flex-basis:100%;">Proje Kayıt Klasörü</label>
+          <div style="display:flex;gap:6px;flex:1;min-width:0;align-items:center;">
+            <span id="save-path-status" style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);flex-shrink:0;" title="Klasör durumu"></span>
+            <input type="text" id="set-save-path" readonly
+              style="flex:1;min-width:0;cursor:default;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-secondary);font-size:12px;padding:6px 10px;outline:none;font-family:inherit;"
+              value="Projeler"
+              placeholder="Klasör seçilmedi"
+              aria-label="Kayıt yolu">
+            <button type="button" id="set-save-path-browse" class="modal-btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;flex-shrink:0;">📁 Gözat</button>
+            <button type="button" id="set-save-path-clear" class="modal-btn" style="padding:6px 8px;font-size:12px;flex-shrink:0;display:none;" title="Klasör bağlantısını kaldır">✕</button>
+          </div>
+        </div>
+
+        <div class="toggle-wrap">
+          <label>Klasöre Otomatik Kaydet<span class="hint">Her kayıtta dosyaları seçilen klasöre proje adıyla alt klasöre kopyala</span></label>
+          <div class="toggle-slider"><input type="checkbox" id="set-external-save" role="switch" aria-checked="false"><span class="track"></span><span class="thumb"></span></div>
+        </div>
+
+        <div id="save-path-note" style="font-size:11px;color:var(--text-muted);padding:4px 0;line-height:1.5;">
+          💡 Dosyalar IndexedDB'ye her zaman kaydedilir. Bu ayar ek olarak seçilen klasöre kopyalar. Yalnızca Chromium tabanlı tarayıcılarda (Chrome, Edge) desteklenir.
+        </div>
+      </div>
+
+      <!-- TEHLİKELİ ALAN -->
+      <div class="settings-section settings-danger-zone">
+        <div class="settings-section-title">⚠ Tehlikeli Alan</div>
+        <div class="set-Btnlr" style="display:flex;justify-content: space-evenly;">
+          <button class="settings-danger-btn" id="set-btn-clear-project"><span class="btn-icon">🗑</span><div class="toggle-wrap"><label>Projeyi Sil<span class="hint">Tüm dosyaları ve proje verisini kalıcı olarak sil</span></label> </div></button>
+          <button class="settings-danger-btn" id="set-btn-clear-data"><span class="btn-icon">🗑</span><div class="toggle-wrap"><label>Tanımlama Verilerini Sil<span class="hint">Cache, Cookie, LocalStorage, IndexedDB</span></label> </div></button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Format Preview modal -->
+<div class="modal-overlay" id="format-modal" aria-modal="true" role="dialog" aria-labelledby="format-title">
+  <div class="modal" style="max-width:900px">
+    <div class="modal-header">
+      <div class="modal-title" id="format-title">...</div>
+      <button class="modal-close" id="format-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div id="format-info"></div>
+      <pre id="format-preview" role="document" aria-label="Formatlanmış kod önizlemesi"></pre>
+    </div>
+    <div class="modal-footer">
+      <button id="format-cancel">İptal</button>
+      <button id="format-apply" class="modal-btn primary">Uygula</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<!-- Hidden inputs -->
+<input type="file" id="file-input" multiple style="display:none" aria-hidden="true" tabindex="-1">
+<input type="file" id="folder-input" webkitdirectory directory multiple style="display:none" aria-hidden="true" tabindex="-1">
+<input type="file" id="zip-input" accept=".zip" style="display:none" aria-hidden="true" tabindex="-1">
+
+<!-- ============ YEREL CODEMIRROR + PRETTIER + JSZIP JS ============ -->
+<script src="lib/jszip/jszip.min.js"></script>
+
+<script src="lib/codemirror/codemirror.js"></script>
+<script src="lib/codemirror/addon/fold/foldgutter.js"></script>
+<script src="lib/codemirror/addon/edit/closebrackets.js"></script>
+<script src="lib/codemirror/addon/edit/closetag.js"></script>
+<script src="lib/codemirror/addon/edit/matchbrackets.js"></script>
+<script src="lib/codemirror/addon/selection/active-line.js"></script>
+
+<!-- Fold -->
+<script src="lib/codemirror/addon/fold/foldcode.js"></script>
+<script src="lib/codemirror/addon/fold/brace-fold.js"></script>
+<script src="lib/codemirror/addon/fold/xml-fold.js"></script>
+<script src="lib/codemirror/addon/fold/comment-fold.js"></script>
+<script src="lib/codemirror/addon/fold/indent-fold.js"></script>
+
+<!-- Autocomplete -->
+<script src="lib/codemirror/addon/hint/show-hint.js"></script>
+<script src="lib/codemirror/addon/hint/css-hint.js"></script>
+<script src="lib/codemirror/addon/hint/html-hint.js"></script>
+<script src="lib/codemirror/addon/hint/javascript-hint.js"></script>
+<script src="lib/codemirror/addon/hint/xml-hint.js"></script>
+<script src="lib/codemirror/addon/hint/anyword-hint.js"></script>
+
+<!-- Comment -->
+<script src="lib/codemirror/addon/comment/comment.js"></script>
+
+<!-- Match Tags -->
+<script src="lib/codemirror/addon/edit/matchtags.js"></script>
+
+<!-- Trailing Space -->
+<script src="lib/codemirror/addon/edit/trailingspace.js"></script>
+
+<!-- Jump to Line -->
+<link rel="stylesheet" href="lib/codemirror/addon/dialog/dialog.css">
+<script src="lib/codemirror/addon/dialog/dialog.js"></script>
+<script src="lib/codemirror/addon/search/jump-to-line.js"></script>
+
+<!-- Emmet -->
+<!-- 
+<link rel="stylesheet" href="lib/codemirror/addon/emmet/emmet.css">
+<script src="lib/codemirror/addon/emmet/emmet.js"></script>
+ -->
+
+<!-- Fullscreen -->
+<link rel="stylesheet" href="lib/codemirror/addon/display/fullscreen.css">
+<script src="lib/codemirror/addon/display/fullscreen.js"></script>
+
+<!-- Selection Highlight -->
+<!-- 
+<link rel="stylesheet" href="lib/codemirror/addon/selection/mark-selection.css">
+ -->
+<script src="lib/codemirror/addon/selection/mark-selection.js"></script>
+
+<!-- Dil Modları -->
+<script src="lib/codemirror/mode/xml/xml.js"></script>
+<script src="lib/codemirror/mode/javascript/javascript.js"></script>
+<script src="lib/codemirror/mode/css/css.js"></script> 
+<script src="lib/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+<script defer src="lib/codemirror/mode/markdown/markdown.js"></script>
+<script defer src="lib/codemirror/mode/python/python.js"></script>
+<script defer src="lib/codemirror/mode/sql/sql.js"></script>
+<!-- 
+<script src="lib/codemirror/mode/css/less_test.js"></script> 
+<script src="lib/codemirror/mode/css/scss_test.js"></script> 
+<script src="lib/codemirror/mode/clike/clike.js"></script>
+<script src="lib/codemirror/mode/sass/sass.js"></script>
+<script src="lib/codemirror/mode/shell/shell.js"></script>
+<script src="lib/codemirror/mode/php/php.js"></script>
+<script src="lib/codemirror/mode/vue/vue.js"></script>
+<script src="lib/codemirror/mode/yaml/yaml.js"></script>
+<script src="lib/codemirror/mode/less/less.js"></script>
+ -->
+
+<!-- Prettier -->
+<script src="lib/prettier/standalone.js"></script>
+<script src="lib/prettier/parser-html.js"></script>
+<script src="lib/prettier/parser-postcss.js"></script>
+<script src="lib/prettier/parser-babel.js"></script>
+<script src="lib/prettier/parser-markdown.js"></script>
+<script src="lib/prettier/parser-typescript.js"></script>
+
+<!-- Global Script — Prettier plugin kaydı -->
+<script>
+const _pp = window.prettierPlugins;
+window.prettierPlugins = {
+  html: _pp?.html, css: _pp?.postcss, babel: _pp?.babel,
+  typescript: _pp?.typescript, markdown: _pp?.markdown,
+};
+</script>
+
+<!-- Modüller — YÜKLEME SIRASI ÖNEMLİ -->
+<script src="js/utils.js"></script>
+<script src="js/vfs.js"></script>
+<script src="js/bundler.js"></script>
+<script src="js/explorer.js"></script>
+<script src="js/tabs.js"></script>
+<script src="js/search.js"></script>
+<script src="js/console-panel.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/io.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/app.js"></script>
+<script src="js/bridge.js"></script>
+
+</body>
+</html>
