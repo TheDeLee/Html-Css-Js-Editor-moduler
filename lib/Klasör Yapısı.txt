@@ -1,0 +1,68 @@
+proje-klasörün/
+├── index.html
+└── lib/
+    ├── codemirror/
+    │   ├── codemirror.css
+    │   ├── codemirror.js
+    │   ├── theme/
+    │   │   └── dracula.css
+    │   ├── addon/
+    │   │   ├── fold/
+    │   │   │   ├── foldcode.js
+    │   │   │   ├── foldgutter.css
+    │   │   │   ├── foldgutter.js
+    │   │   │   ├── brace-fold.js
+    │   │   │   ├── xml-fold.js
+    │   │   │   ├── comment-fold.js
+    │   │   │   └── indent-fold.js
+    │   │   ├── edit/
+    │   │   │   ├── closebrackets.js
+    │   │   │   ├── closetag.js
+    │   │   │   ├── matchbrackets.js
+    │   │   │   ├── matchtags.js
+    │   │   │   └── trailingspace.js
+    │   │   ├── selection/
+    │   │   │   ├── active-line.js
+    │   │   │   └── mark-selection.css
+    │   │   │   └── mark-selection.js
+    │   │   ├── hint/
+    │   │   │   ├── show-hint.css
+    │   │   │   ├── show-hint.js
+    │   │   │   ├── css-hint.js
+    │   │   │   ├── html-hint.js
+    │   │   │   ├── javascript-hint.js
+    │   │   │   ├── xml-hint.js
+    │   │   │   └── anyword-hint.js
+    │   │   ├── comment/
+    │   │   │   └── comment.js
+    │   │   ├── dialog/
+    │   │   │   ├── dialog.css
+    │   │   │   └── dialog.js
+    │   │   ├── search/
+    │   │   │   └── jump-to-line.js
+    │   │   ├── emmet/
+    │   │   │   ├── emmet.css X
+    │   │   │   └── emmet.js X
+    │   │   └── display/
+    │   │       ├── fullscreen.css
+    │   │       └── fullscreen.js
+    │   └── mode/
+    │       ├── clike/clike.js
+    │       ├── php/php.js
+    │       ├── python/python.js
+    │       ├── sql/sql.js
+    │       ├── shell/shell.js
+    │       ├── yaml/yaml.js
+    │       ├── vue/vue.js
+    │       ├── sass/sass.js
+    │       └── less/less.js
+    │       └── markdown/markdown.js
+    ├── prettier/
+    │   ├── standalone.js
+    │   ├── parser-html.js
+    │   ├── parser-postcss.js
+    │   ├── parser-babel.js
+    │   ├── parser-markdown.js
+    │   └── parser-typescript.js
+    └── jszip/
+        └── jszip.min.js
